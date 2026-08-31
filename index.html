@@ -43,6 +43,7 @@
     <symbol id="i-zap" viewBox="0 0 24 24"><path d="M15.914 4a1.5 1.5 0 00-2.474-1.561l-9 9A1.5 1.5 0 005.5 14h4.002a.5.5 0 01.471.666L8.086 20a1.5 1.5 0 002.475 1.56l9-9A1.5 1.5 0 0018.5 10h-3.997a.5.5 0 01-.472-.667z" /></symbol>
     <symbol id="i-bag-plus" viewBox="0 0 24 24"><path d="M12 22V12" /> <path d="M16 17h6" /> <path d="M19 14v6" /> <path d="M21 10.535V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.729l7 4a2 2 0 0 0 2 .001l1.675-.955" /> <path d="M3.29 7 12 12l8.71-5" /> <path d="m7.5 4.27 8.997 5.148" /></symbol>
     <symbol id="i-x-lg" viewBox="0 0 24 24"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></symbol>
+    <symbol id="i-trash-2" viewBox="0 0 24 24"><path d="M10 11v6" /> <path d="M14 11v6" /> <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /> <path d="M3 6h18" /> <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></symbol>
     <symbol id="i-box-arrow-right" viewBox="0 0 24 24"><path d="m16 17 5-5-5-5" /> <path d="M21 12H9" /> <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /></symbol>
     <symbol id="i-cash-coin" viewBox="0 0 24 24"><path d="M13.744 17.736a6 6 0 1 1-7.48-7.48" /> <path d="M15 6h1v4" /> <path d="m6.134 14.768.866-.5 2 3.464" /> <circle cx="16" cy="8" r="6" /></symbol>
   </defs>
@@ -81,6 +82,15 @@
   </div>
 
   <div class="main">
+
+    <!-- Toast de sucesso ao gravar a entrega (some sozinho após alguns segundos) -->
+    <div class="entrega-success-toast" id="entregaSuccessToast">
+      <div class="entrega-success-bar"></div>
+      <div class="entrega-success-content">
+        <svg class="ic"><use href="#i-check"></use></svg>
+        <span class="entrega-success-text">Entrega gerada com sucesso!</span>
+      </div>
+    </div>
 
     <!-- Order info + client card -->
     <div class="card order-card">
@@ -151,6 +161,7 @@
         <span class="title">Lista de Produtos Sem entrega</span>
       </div>
 
+      <div id="produtoListaBody">
       <div class="produto-item">
         <div class="produto-top">
           <button class="checkbox" data-product-checkbox></button>
@@ -190,6 +201,7 @@
         <div class="produto-full-row">
           <span class="badge-full"><svg class="ic"><use href="#i-zap"></use></svg>Full</span>
         </div>
+      </div>
       </div>
     </div>
 
@@ -262,12 +274,18 @@
       </div>
     </div>
 
+    <!-- Lista de Entregas de Pedidos: um item por entrega gerada em "Gravar" -->
+    <div class="card card-shadow" id="entregasCard" style="display:none;overflow:hidden;">
+      <div class="card-header"><span class="title">Lista de Entregas de Pedidos</span></div>
+      <div id="entregasList"></div>
+    </div>
+
     <!-- Resumo do pedido -->
     <div class="card card-shadow resumo-card">
       <button class="btn-add-mais" data-toast="Abrindo busca de produtos…"><svg class="ic"><use href="#i-bag-plus"></use></svg>Adicionar mais produtos</button>
       <div class="resumo-actions">
         <button class="btn-voltar" data-toast="Voltando para a etapa anterior…">Voltar</button>
-        <button class="btn-gravar" disabled title="Preencha os dados obrigatórios para habilitar">Gravar</button>
+        <button class="btn-gravar" id="btnGravar" disabled title="Selecione o(s) produto(s) e o método de entrega para habilitar">Gravar</button>
       </div>
     </div>
 

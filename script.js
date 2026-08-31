@@ -77,15 +77,19 @@
     el.innerHTML = checked ? '<svg class="ic"><use href="#i-check"></use></svg>' : '';
   }
   selectAllCheckbox.addEventListener('click', ()=>{
+    resetEntregaSelectionIfOpen();
     const willCheck = !selectAllCheckbox.classList.contains('checked');
     setCheckbox(selectAllCheckbox, willCheck);
-    productCheckboxes.forEach(cb=> setCheckbox(cb, willCheck));
+    document.querySelectorAll('[data-product-checkbox]').forEach(cb=> setCheckbox(cb, willCheck));
     updateEntregaAvailability();
+    updateGravarAvailability();
   });
   productCheckboxes.forEach(cb=>{
     cb.addEventListener('click', ()=>{
+      resetEntregaSelectionIfOpen();
       setCheckbox(cb, !cb.classList.contains('checked'));
       updateEntregaAvailability();
+      updateGravarAvailability();
     });
   });
 
@@ -116,6 +120,20 @@
   const entregaDetailIcon = document.getElementById('entregaDetailIcon');
   const entregaDetailLabel = document.getElementById('entregaDetailLabel');
   const entregaDepositoBtn = document.getElementById('entregaDepositoBtn');
+
+  // ---- Habilitação do botão "Gravar" ----
+  // Só fica habilitado quando 1+ produtos estiverem selecionados E um método de entrega tiver sido
+  // confirmado (o card de detalhe de "Retira Rápido"/"Retira Depósito" estiver aberto).
+  const btnGravar = document.getElementById('btnGravar');
+  function updateGravarAvailability(){
+    const anySelected = Array.from(document.querySelectorAll('.produto-item')).some(item=>{
+      const cb = item.querySelector('[data-product-checkbox]');
+      return cb && cb.classList.contains('checked');
+    });
+    const methodConfirmed = entregaDetailView.style.display === 'flex';
+    btnGravar.disabled = !(anySelected && methodConfirmed);
+  }
+  updateGravarAvailability();
 
   const entregaDetailConfig = {
     rapido: { icon: '#i-zap', label: 'Retira Rápido' },
@@ -177,9 +195,11 @@
     entregaOptionsView.style.display = 'none';
     entregaDetailView.style.display = 'none';
     entregaLoading.classList.add('active');
+    updateGravarAvailability();
     setTimeout(()=>{
       entregaLoading.classList.remove('active');
       applyState();
+      updateGravarAvailability();
       entregaLoadingActive = false;
     }, 1000);
   }
@@ -199,6 +219,16 @@
     });
   });
 
+  // ---- Se o usuário mexer na seleção de produtos depois de já ter escolhido um método de entrega,
+  // a entrega escolhida é descartada e ele precisa selecionar o método novamente ----
+  function resetEntregaSelectionIfOpen(){
+    if(entregaDetailView.style.display === 'flex'){
+      entregaDetailView.style.display = 'none';
+      entregaOptionsView.style.display = 'flex';
+      localRetiradaOptions.classList.remove('open');
+    }
+  }
+
   localRetiradaBtn.addEventListener('click', (e)=>{
     e.stopPropagation();
     localRetiradaOptions.classList.toggle('open');
@@ -214,6 +244,156 @@
     });
   });
   document.addEventListener('click', ()=> localRetiradaOptions.classList.remove('open'));
+
+  // ---- Gravar: gera a entrega dos produtos selecionados ----
+  // Os produtos tratados saem da "Lista de Produtos Sem entrega"; os demais permanecem até serem tratados.
+  const entregaSuccessToast = document.getElementById('entregaSuccessToast');
+  const produtoListaBody = document.getElementById('produtoListaBody');
+  let entregaSuccessTimer;
+  function showEntregaSuccessToast(){
+    clearTimeout(entregaSuccessTimer);
+    entregaSuccessToast.classList.add('show');
+    entregaSuccessTimer = setTimeout(()=> entregaSuccessToast.classList.remove('show'), 3000);
+  }
+  function updateProdutoListaEmptyState(){
+    const remaining = produtoListaBody.querySelectorAll('.produto-item').length;
+    let emptyMsg = document.getElementById('produtoListaEmpty');
+    if(remaining === 0){
+      if(!emptyMsg){
+        emptyMsg = document.createElement('div');
+        emptyMsg.id = 'produtoListaEmpty';
+        emptyMsg.style.cssText = 'padding:24px;color:var(--grey-500);font-size:14px;text-align:center;';
+        emptyMsg.textContent = 'Nenhum produto pendente de entrega.';
+        produtoListaBody.appendChild(emptyMsg);
+      }
+    } else if(emptyMsg){
+      emptyMsg.remove();
+    }
+  }
+  // ---- Lista de Entregas de Pedidos: um item novo a cada entrega gerada ----
+  // Card de detalhe (aberto/fechado) conforme node 6506:121939.
+  const entregasCard = document.getElementById('entregasCard');
+  const entregasList = document.getElementById('entregasList');
+  let entregaNumeroCounter = 72010410;
+  function addEntregaResumoEntry(methodLabel, distribLabel, disponibilidadeText, produtos, produtoNodes){
+    const numero = entregaNumeroCounter++;
+
+    // "A partir de 22/08 - 9hrs" -> data "22/08", hora "9hrs"
+    const m = /A partir de (.+?) - (.+)/.exec(disponibilidadeText || '');
+    const dataRetirada = m ? m[1] : '';
+    const horaRetirada = m ? m[2] : '';
+
+    const produtosHtml = produtos.map(function(p){
+      return (
+        '<div class="entrega-produto-card">' +
+          '<div class="entrega-produto-nome">' + p.nome + '</div>' +
+          '<div class="entrega-produto-cor">' + p.cor + '</div>' +
+          '<div class="entrega-produto-qtd"><span>Qtd:</span><span>' + p.qtd + '</span></div>' +
+          (p.montagem ? '<button type="button" class="entrega-produto-montagem">Monte Você Mesmo</button>' : '') +
+        '</div>'
+      );
+    }).join('');
+
+    const row = document.createElement('div');
+    row.className = 'entrega-resumo-row';
+    row.innerHTML =
+      '<button type="button" class="entrega-resumo-header">' +
+        '<div class="entrega-resumo-top">' +
+          '<div class="entrega-resumo-titulo">' +
+            '<span class="badge-em-criacao">Em Criação</span>' +
+            '<p class="entrega-resumo-nome">Entrega Nº. ' + numero + ' - ' + methodLabel + '</p>' +
+          '</div>' +
+          '<svg class="ic entrega-resumo-chevron"><use href="#i-chevron-down"></use></svg>' +
+        '</div>' +
+        '<div class="entrega-resumo-info"><p>' + distribLabel + '</p></div>' +
+      '</button>' +
+      '<div class="entrega-resumo-detail">' +
+        '<div class="entrega-info-box">' +
+          '<p>Valor Frete: <strong>0,00</strong></p>' +
+          '<p>Prazo Extra de Entrega: <strong>1 dias</strong></p>' +
+          '<p>Disponível para retirada a partir de <strong>' + dataRetirada + '</strong> às ' + horaRetirada + '.</p>' +
+          '<p>Não será montado.</p>' +
+          '<p>Prazo Extra de Montagem: <strong>0 dias</strong></p>' +
+        '</div>' +
+        '<div class="entrega-detail-actions">' +
+          '<button type="button" class="btn-tratar-agendamento">Tratar Agendamento</button>' +
+          '<button type="button" class="btn-excluir-entrega"><svg class="ic"><use href="#i-trash-2"></use></svg>Excluir Entrega</button>' +
+        '</div>' +
+        '<div class="entrega-produtos">' + produtosHtml + '</div>' +
+      '</div>';
+
+    row.querySelector('.entrega-resumo-header').addEventListener('click', ()=>{
+      row.classList.toggle('open');
+      row.querySelector('.entrega-resumo-chevron').classList.toggle('rotated');
+    });
+    row.querySelector('.btn-tratar-agendamento').addEventListener('click', ()=>{
+      showToast('Abrindo agendamento… (exploração de design — sem integração)');
+    });
+    row.querySelector('.btn-excluir-entrega').addEventListener('click', ()=>{
+      // Devolve o(s) produto(s) dessa entrega para a "Lista de Produtos Sem entrega", desmarcados,
+      // para que a entrega seja tratada novamente.
+      produtoNodes.forEach(function(node){
+        const cb = node.querySelector('[data-product-checkbox]');
+        if(cb) setCheckbox(cb, false);
+        produtoListaBody.appendChild(node);
+      });
+      updateProdutoListaEmptyState();
+      updateEntregaAvailability();
+      updateGravarAvailability();
+
+      row.remove();
+      if(!entregasList.querySelector('.entrega-resumo-row')){
+        entregasCard.style.display = 'none';
+      }
+      showToast('Entrega excluída — produto(s) voltaram para a lista sem entrega');
+    });
+
+    entregasList.appendChild(row);
+    entregasCard.style.display = 'block';
+  }
+
+  btnGravar.addEventListener('click', ()=>{
+    if(btnGravar.disabled) return;
+
+    const itemsToRemove = Array.from(document.querySelectorAll('.produto-item')).filter(item=>{
+      const cb = item.querySelector('[data-product-checkbox]');
+      return cb && cb.classList.contains('checked');
+    });
+
+    // Captura os dados dos produtos antes de removê-los da "Lista de Produtos Sem entrega"
+    const produtosGerados = itemsToRemove.map(function(item){
+      const qtdSpans = item.querySelectorAll('.produto-qtd-inline span');
+      return {
+        nome: item.querySelector('.produto-nome').textContent,
+        cor: item.querySelector('.produto-cor').textContent,
+        qtd: qtdSpans.length > 1 ? qtdSpans[1].textContent : '1',
+        montagem: !!item.querySelector('.badge-assemble')
+      };
+    });
+
+    itemsToRemove.forEach(item=> item.remove());
+    updateProdutoListaEmptyState();
+
+    // Gera o item da "Lista de Entregas de Pedidos" com o método, o centro de distribuição e os produtos
+    // (guarda os nós originais dos produtos para poder devolvê-los à lista se a entrega for excluída)
+    addEntregaResumoEntry(
+      entregaDetailConfig[currentEntregaSource].label,
+      distribTitle.textContent,
+      disponibilidadeValue.textContent,
+      produtosGerados,
+      itemsToRemove
+    );
+
+    // Reseta a seleção e o card "Dados Para Entrega" para o estado inicial
+    setCheckbox(selectAllCheckbox, false);
+    localRetiradaOptions.classList.remove('open');
+    entregaDetailView.style.display = 'none';
+    entregaOptionsView.style.display = 'flex';
+
+    updateEntregaAvailability();
+    updateGravarAvailability();
+    showEntregaSuccessToast();
+  });
 
   // ---- Menu de "⋮" por item da lista de produtos ----
   document.querySelectorAll('.item-menu-wrap').forEach(wrap=>{
