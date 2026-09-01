@@ -1,4 +1,4 @@
-  // ---- Toast helper ----
+// ---- Toast helper ----
   const toastEl = document.getElementById('toast');
   let toastTimer;
   function showToast(msg){
@@ -57,17 +57,6 @@
   // ---- Client chevron ----
   const clientChevronBtn = document.getElementById('clientChevronBtn');
   clientChevronBtn.addEventListener('click', ()=> clientChevronBtn.classList.toggle('rotated'));
-
-  // ---- Mostrar opções de pagamento ----
-  const payOptionsBtn = document.getElementById('payOptionsBtn');
-  const payOptionsPanel = document.getElementById('payOptionsPanel');
-  const payOptionsIconUse = document.querySelector('#payOptionsIcon use');
-  const payOptionsLabel = document.getElementById('payOptionsLabel');
-  payOptionsBtn.addEventListener('click', ()=>{
-    const open = payOptionsPanel.classList.toggle('open');
-    payOptionsIconUse.setAttribute('href', open ? '#i-eye-slash' : '#i-eye');
-    payOptionsLabel.textContent = open ? 'Ocultar Opções de Pagamento' : 'Mostrar Opções de Pagamento';
-  });
 
   // ---- Select-all checkbox ----
   const selectAllCheckbox = document.getElementById('selectAllCheckbox');
@@ -185,7 +174,7 @@
     entregaDetailView.style.display = 'flex';
   }
 
-  // ---- Loading de 1s ao trocar de estado no card "Dados Para Entrega" ----
+  // ---- Loading de 0,5s ao trocar de estado no card "Dados Para Entrega" ----
   // Usado ao: escolher um tipo de entrega, voltar para trocar o método, ou alterar o local de retirada.
   const entregaLoading = document.getElementById('entregaLoading');
   let entregaLoadingActive = false;
@@ -201,7 +190,7 @@
       applyState();
       updateGravarAvailability();
       entregaLoadingActive = false;
-    }, 1000);
+    }, 500);
   }
 
   entregaRapidoBtn.addEventListener('click', ()=>{
@@ -245,6 +234,121 @@
   });
   document.addEventListener('click', ()=> localRetiradaOptions.classList.remove('open'));
 
+  // ---- Modal: Tratar agendamento ----
+  // Regra de negócio: o agendamento de retirada pode ser de até 5 dias úteis
+  // após a data "Disponível para retirada" da entrega. O usuário digita a data
+  // manualmente (campo com máscara DD/MM/AAAA), sem calendário.
+  const agendamentoOverlay = document.getElementById('agendamentoOverlay');
+  const agendamentoEntregaTitulo = document.getElementById('agendamentoEntregaTitulo');
+  const agendamentoDisponivelEl = document.getElementById('agendamentoDisponivel');
+  const agendamentoAnotacao = document.getElementById('agendamentoAnotacao');
+  const agendamentoConfirmBtn = document.getElementById('agendamentoConfirmBtn');
+  const agendamentoVoltarBtn = document.getElementById('agendamentoVoltarBtn');
+  const agendamentoDataInput = document.getElementById('agendamentoDataInput');
+  const agendamentoHint = document.getElementById('agendamentoHint');
+  let agendamentoMinDate = null;
+  let agendamentoMaxDate = null;
+  let agendamentoSelectedDate = null;
+  let agendamentoOnConfirm = null;
+
+  function parseDataDisponivel(dataRetirada){
+    // dataRetirada no formato "DD/MM" (ex.: "22/08")
+    const m = /^(\d{2})\/(\d{2})$/.exec(dataRetirada || '');
+    if(!m) return null;
+    const anoRef = new Date().getFullYear();
+    return new Date(anoRef, parseInt(m[2], 10) - 1, parseInt(m[1], 10));
+  }
+  function addBusinessDays(date, days){
+    const result = new Date(date.getTime());
+    let added = 0;
+    while(added < days){
+      result.setDate(result.getDate() + 1);
+      const dow = result.getDay();
+      if(dow !== 0 && dow !== 6) added++;
+    }
+    return result;
+  }
+  function toBRDate(date){
+    return String(date.getDate()).padStart(2,'0') + '/' + String(date.getMonth()+1).padStart(2,'0') + '/' + date.getFullYear();
+  }
+  function parseBRDateString(str){
+    const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(str || '');
+    if(!m) return null;
+    const d = parseInt(m[1], 10), mo = parseInt(m[2], 10), y = parseInt(m[3], 10);
+    if(mo < 1 || mo > 12) return null;
+    const date = new Date(y, mo - 1, d);
+    if(date.getFullYear() !== y || date.getMonth() !== mo - 1 || date.getDate() !== d) return null;
+    return date;
+  }
+
+  // Máscara: formata os dígitos digitados como DD/MM/AAAA automaticamente.
+  agendamentoDataInput.addEventListener('input', ()=>{
+    const digits = agendamentoDataInput.value.replace(/\D/g, '').slice(0, 8);
+    let formatted = digits;
+    if(digits.length > 4) formatted = digits.slice(0,2) + '/' + digits.slice(2,4) + '/' + digits.slice(4);
+    else if(digits.length > 2) formatted = digits.slice(0,2) + '/' + digits.slice(2);
+    agendamentoDataInput.value = formatted;
+    if(digits.length < 8){ agendamentoConfirmBtn.disabled = true; return; }
+    validateAgendamentoDate();
+  });
+  agendamentoDataInput.addEventListener('blur', validateAgendamentoDate);
+
+  function validateAgendamentoDate(){
+    const value = agendamentoDataInput.value.trim();
+    if(!value){ agendamentoConfirmBtn.disabled = true; return; }
+    const parsed = parseBRDateString(value);
+    const foraDoIntervalo = !parsed || (agendamentoMinDate && parsed < agendamentoMinDate) || (agendamentoMaxDate && parsed > agendamentoMaxDate);
+    if(foraDoIntervalo){
+      showToast(parsed
+        ? 'Selecione uma data entre ' + toBRDate(agendamentoMinDate) + ' e ' + toBRDate(agendamentoMaxDate) + ' (até 5 dias úteis após a disponibilidade)'
+        : 'Data inválida. Use o formato DD/MM/AAAA.');
+      agendamentoDataInput.value = '';
+      agendamentoSelectedDate = null;
+      agendamentoConfirmBtn.disabled = true;
+      return;
+    }
+    agendamentoSelectedDate = parsed;
+    agendamentoConfirmBtn.disabled = false;
+  }
+
+  function openAgendamentoModal(numero, dataRetirada, onConfirm){
+    agendamentoEntregaTitulo.textContent = 'Entrega: ' + numero;
+    const disponivelDate = parseDataDisponivel(dataRetirada);
+    if(disponivelDate){
+      agendamentoDisponivelEl.textContent = toBRDate(disponivelDate);
+      agendamentoMinDate = disponivelDate;
+      agendamentoMaxDate = addBusinessDays(disponivelDate, 5);
+      agendamentoHint.textContent = 'Data permitida: ' + toBRDate(agendamentoMinDate) + ' até ' + toBRDate(agendamentoMaxDate);
+    } else {
+      agendamentoDisponivelEl.textContent = '—';
+      agendamentoMinDate = null;
+      agendamentoMaxDate = null;
+      agendamentoHint.textContent = '';
+    }
+    agendamentoDataInput.value = '';
+    agendamentoAnotacao.value = '';
+    agendamentoSelectedDate = null;
+    agendamentoOnConfirm = typeof onConfirm === 'function' ? onConfirm : null;
+    agendamentoConfirmBtn.disabled = true;
+    agendamentoOverlay.classList.add('open');
+  }
+  function closeAgendamentoModal(){
+    agendamentoOverlay.classList.remove('open');
+  }
+
+  agendamentoVoltarBtn.addEventListener('click', closeAgendamentoModal);
+  agendamentoOverlay.addEventListener('click', (e)=>{
+    if(e.target === agendamentoOverlay) closeAgendamentoModal();
+  });
+  agendamentoConfirmBtn.addEventListener('click', ()=>{
+    if(agendamentoConfirmBtn.disabled) return;
+    const dataEscolhida = agendamentoSelectedDate;
+    const onConfirm = agendamentoOnConfirm;
+    closeAgendamentoModal();
+    if(onConfirm && dataEscolhida) onConfirm(dataEscolhida);
+    showToast('Agendamento tratado com sucesso (exploração de design — sem integração)');
+  });
+
   // ---- Gravar: gera a entrega dos produtos selecionados ----
   // Os produtos tratados saem da "Lista de Produtos Sem entrega"; os demais permanecem até serem tratados.
   const entregaSuccessToast = document.getElementById('entregaSuccessToast');
@@ -255,6 +359,7 @@
     entregaSuccessToast.classList.add('show');
     entregaSuccessTimer = setTimeout(()=> entregaSuccessToast.classList.remove('show'), 3000);
   }
+  const dadosEntregaCard = document.getElementById('dadosEntregaCard');
   function updateProdutoListaEmptyState(){
     const remaining = produtoListaBody.querySelectorAll('.produto-item').length;
     let emptyMsg = document.getElementById('produtoListaEmpty');
@@ -263,12 +368,14 @@
         emptyMsg = document.createElement('div');
         emptyMsg.id = 'produtoListaEmpty';
         emptyMsg.style.cssText = 'padding:24px;color:var(--grey-500);font-size:14px;text-align:center;';
-        emptyMsg.textContent = 'Nenhum produto pendente de entrega.';
+        emptyMsg.textContent = 'Não há produtos para esse pedido sem entregas.';
         produtoListaBody.appendChild(emptyMsg);
       }
     } else if(emptyMsg){
       emptyMsg.remove();
     }
+    // Todos os itens já tiveram a entrega tratada: o card "Dados Para Entrega" não tem mais função aqui.
+    dadosEntregaCard.style.display = remaining === 0 ? 'none' : '';
   }
   // ---- Lista de Entregas de Pedidos: um item novo a cada entrega gerada ----
   // Card de detalhe (aberto/fechado) conforme node 6506:121939.
@@ -309,11 +416,9 @@
       '</button>' +
       '<div class="entrega-resumo-detail">' +
         '<div class="entrega-info-box">' +
-          '<p>Valor Frete: <strong>0,00</strong></p>' +
           '<p>Prazo Extra de Entrega: <strong>1 dias</strong></p>' +
-          '<p>Disponível para retirada a partir de <strong>' + dataRetirada + '</strong> às ' + horaRetirada + '.</p>' +
-          '<p>Não será montado.</p>' +
-          '<p>Prazo Extra de Montagem: <strong>0 dias</strong></p>' +
+          '<p>Disponível para retirada a partir de <strong class="entrega-disponibilidade-valor">' + dataRetirada + '</strong> às <span class="entrega-disponibilidade-hora">' + horaRetirada + '</span>.</p>' +
+          '<p><strong>Não será montado.</strong></p>' +
         '</div>' +
         '<div class="entrega-detail-actions">' +
           '<button type="button" class="btn-tratar-agendamento">Tratar Agendamento</button>' +
@@ -327,7 +432,12 @@
       row.querySelector('.entrega-resumo-chevron').classList.toggle('rotated');
     });
     row.querySelector('.btn-tratar-agendamento').addEventListener('click', ()=>{
-      showToast('Abrindo agendamento… (exploração de design — sem integração)');
+      openAgendamentoModal(numero, dataRetirada, function(novaData){
+        // Atualiza a data exibida em "Disponível para retirada a partir de..." desta entrega
+        // com a nova data de retirada escolhida no agendamento.
+        const valorEl = row.querySelector('.entrega-disponibilidade-valor');
+        if(valorEl) valorEl.textContent = toBRDate(novaData);
+      });
     });
     row.querySelector('.btn-excluir-entrega').addEventListener('click', ()=>{
       // Devolve o(s) produto(s) dessa entrega para a "Lista de Produtos Sem entrega", desmarcados,
@@ -395,17 +505,5 @@
     showEntregaSuccessToast();
   });
 
-  // ---- Menu de "⋮" por item da lista de produtos ----
-  document.querySelectorAll('.item-menu-wrap').forEach(wrap=>{
-    const btn = wrap.querySelector('.item-menu-btn');
-    const menu = wrap.querySelector('.item-menu');
-    btn.addEventListener('click', (e)=>{
-      e.stopPropagation();
-      document.querySelectorAll('.item-menu.open').forEach(m=>{ if(m!==menu) m.classList.remove('open'); });
-      menu.classList.toggle('open');
-    });
-    menu.querySelectorAll('button').forEach(b=> b.addEventListener('click', ()=> menu.classList.remove('open')));
-  });
-  document.addEventListener('click', ()=> document.querySelectorAll('.item-menu.open').forEach(m=>m.classList.remove('open')));
 
   // ---- Opções de entrega: apenas visuais, sem ação ao clicar ----
