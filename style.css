@@ -33,6 +33,18 @@
     --sp-3:12px;
     --sp-4:16px;
     --sp-6:24px;
+    --device-max-width:480px;
+  }
+  /* Largura máxima do "aparelho" cresce em telas de tablet, para não ficar
+     preso numa faixa de celular com margens cinzas enormes dos dois lados.
+     Elementos com position:fixed que se ancoram numa borda específica (menu
+     lateral, tag de exploração) usam essa mesma variável para acompanhar a
+     borda real do app em vez da borda da janela do navegador. */
+  @media (min-width:600px){
+    :root{--device-max-width:600px;}
+  }
+  @media (min-width:900px){
+    :root{--device-max-width:720px;}
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
@@ -45,7 +57,8 @@
     min-height:100vh;
   }
   .device{
-    width:480px;
+    width:100%;
+    max-width:var(--device-max-width);
     min-height:100vh;
     background:var(--grey-50);
     position:relative;
@@ -848,13 +861,15 @@
   .drawer{
     position:fixed;
     top:0;
-    right:0;
+    right:calc((100vw - min(100vw, var(--device-max-width))) / 2);
     height:100%;
     width:320px;
     max-width:88vw;
     background:#fff;
     box-shadow:-6px 0 20px rgba(0,0,0,0.15);
-    transform:translateX(100%);
+    /* Fecha para fora da JANELA (não só da borda do device): soma a própria
+       largura com a margem cinza à direita do device nas telas de tablet. */
+    transform:translateX(calc(100% + (100vw - min(100vw, var(--device-max-width))) / 2));
     transition:transform .25s ease;
     z-index:31;
     padding:32px 24px;
@@ -1055,7 +1070,7 @@
   .exploration-tag{
     position:fixed;
     top:8px;
-    left:8px;
+    left:calc((100vw - min(100vw, var(--device-max-width))) / 2 + 8px);
     background:#111;
     color:#fff;
     font-size:11px;
@@ -1064,8 +1079,4 @@
     opacity:0.55;
     z-index:5;
     font-family:'Geist','Inter',sans-serif;
-  }
-
-  @media (max-width:480px){
-    .device{width:100%;}
   }
