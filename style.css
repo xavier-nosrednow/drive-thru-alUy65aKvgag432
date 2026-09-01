@@ -33,37 +33,26 @@
     --sp-3:12px;
     --sp-4:16px;
     --sp-6:24px;
-    --device-max-width:480px;
-  }
-  /* Largura máxima do "aparelho" cresce em telas de tablet, para não ficar
-     preso numa faixa de celular com margens cinzas enormes dos dois lados.
-     Elementos com position:fixed que se ancoram numa borda específica (menu
-     lateral, tag de exploração) usam essa mesma variável para acompanhar a
-     borda real do app em vez da borda da janela do navegador. */
-  @media (min-width:600px){
-    :root{--device-max-width:600px;}
-  }
-  @media (min-width:900px){
-    :root{--device-max-width:720px;}
+    /* Largura confortável de leitura para cabeçalho/abas/conteúdo em telas
+       muito grandes (desktop). O "aparelho" em si sempre preenche 100% da
+       tela — só o conteúdo interno fica centralizado e limitado nessas
+       larguras, como em qualquer app web responsivo. */
+    --content-max-width:1200px;
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
   body{
     font-family:'Geist','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
-    background:#dfe1e2;
+    background:var(--grey-50);
     color:var(--grey-950);
-    display:flex;
-    justify-content:center;
     min-height:100vh;
   }
   .device{
     width:100%;
-    max-width:var(--device-max-width);
     min-height:100vh;
     background:var(--grey-50);
     position:relative;
     overflow-x:hidden;
-    box-shadow:0 0 24px rgba(0,0,0,0.15);
   }
 
   /* ---------- Inline icon sprite ---------- */
@@ -95,6 +84,8 @@
     align-items:center;
     justify-content:space-between;
     width:100%;
+    max-width:var(--content-max-width);
+    margin:0 auto;
   }
   .logo{
     background:#fff;
@@ -155,6 +146,8 @@
   /* ---------- Nav tabs ---------- */
   .navbar-steps{
     padding:0 24px;
+    max-width:var(--content-max-width);
+    margin:0 auto;
   }
   .navbar-steps .tabs{
     display:flex;
@@ -203,6 +196,26 @@
     display:flex;
     flex-direction:column;
     gap:24px;
+    max-width:var(--content-max-width);
+    margin:0 auto;
+  }
+  /* Abaixo de 900px os wrappers "primary"/"sidebar" ficam transparentes ao
+     layout (display:contents), preservando exatamente a coluna única atual.
+     A partir de 900px viram duas colunas reais lado a lado, aproveitando o
+     espaço de tablets e telas maiores em vez de uma única coluna esticada. */
+  .main-primary,.main-sidebar{display:contents;}
+  @media (min-width:900px){
+    .main{
+      display:grid;
+      grid-template-columns:minmax(0,1.35fr) minmax(320px,1fr);
+      grid-template-areas:
+        "banner banner"
+        "primary sidebar";
+      align-items:start;
+    }
+    #entregaSuccessToast{grid-area:banner;}
+    .main-primary{grid-area:primary;display:flex;flex-direction:column;gap:24px;min-width:0;}
+    .main-sidebar{grid-area:sidebar;display:flex;flex-direction:column;gap:24px;min-width:0;}
   }
   .card{
     background:var(--grey-0);
@@ -861,15 +874,13 @@
   .drawer{
     position:fixed;
     top:0;
-    right:calc((100vw - min(100vw, var(--device-max-width))) / 2);
+    right:0;
     height:100%;
     width:320px;
     max-width:88vw;
     background:#fff;
     box-shadow:-6px 0 20px rgba(0,0,0,0.15);
-    /* Fecha para fora da JANELA (não só da borda do device): soma a própria
-       largura com a margem cinza à direita do device nas telas de tablet. */
-    transform:translateX(calc(100% + (100vw - min(100vw, var(--device-max-width))) / 2));
+    transform:translateX(100%);
     transition:transform .25s ease;
     z-index:31;
     padding:32px 24px;
@@ -1070,7 +1081,7 @@
   .exploration-tag{
     position:fixed;
     top:8px;
-    left:calc((100vw - min(100vw, var(--device-max-width))) / 2 + 8px);
+    left:8px;
     background:#111;
     color:#fff;
     font-size:11px;
