@@ -199,24 +199,10 @@
     max-width:var(--content-max-width);
     margin:0 auto;
   }
-  /* Abaixo de 900px os wrappers "primary"/"sidebar" ficam transparentes ao
-     layout (display:contents), preservando exatamente a coluna única atual.
-     A partir de 900px viram duas colunas reais lado a lado, aproveitando o
-     espaço de tablets e telas maiores em vez de uma única coluna esticada. */
+  /* Wrappers "primary"/"sidebar" ficam transparentes ao layout em qualquer
+     tamanho de tela (display:contents): os cards sempre fluem em coluna
+     única, um abaixo do outro, do celular ao desktop. */
   .main-primary,.main-sidebar{display:contents;}
-  @media (min-width:900px){
-    .main{
-      display:grid;
-      grid-template-columns:minmax(0,1.35fr) minmax(320px,1fr);
-      grid-template-areas:
-        "banner banner"
-        "primary sidebar";
-      align-items:start;
-    }
-    #entregaSuccessToast{grid-area:banner;}
-    .main-primary{grid-area:primary;display:flex;flex-direction:column;gap:24px;min-width:0;}
-    .main-sidebar{grid-area:sidebar;display:flex;flex-direction:column;gap:24px;min-width:0;}
-  }
   .card{
     background:var(--grey-0);
     border:1px solid var(--grey-100);
