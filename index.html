@@ -311,8 +311,12 @@
 
       <div class="agendamento-field agendamento-field--input">
         <label for="agendamentoDataInput">Agendamento Entrega</label>
-        <input type="text" inputmode="numeric" autocomplete="off" maxlength="10" placeholder="DD/MM/AAAA" class="agendamento-date-input" id="agendamentoDataInput">
+        <input type="text" inputmode="numeric" autocomplete="off" maxlength="10" placeholder="DD/MM/AAAA" class="agendamento-date-input" id="agendamentoDataInput" aria-describedby="agendamentoHint agendamentoDataErrorText">
         <span class="agendamento-hint" id="agendamentoHint"></span>
+        <div class="agendamento-error" id="agendamentoDataError" hidden>
+          <svg class="ic"><use href="#i-x-circle"></use></svg>
+          <span id="agendamentoDataErrorText"></span>
+        </div>
       </div>
 
       <div class="agendamento-field">

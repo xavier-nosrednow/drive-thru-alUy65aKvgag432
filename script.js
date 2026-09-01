@@ -246,6 +246,8 @@
   const agendamentoVoltarBtn = document.getElementById('agendamentoVoltarBtn');
   const agendamentoDataInput = document.getElementById('agendamentoDataInput');
   const agendamentoHint = document.getElementById('agendamentoHint');
+  const agendamentoDataError = document.getElementById('agendamentoDataError');
+  const agendamentoDataErrorText = document.getElementById('agendamentoDataErrorText');
   let agendamentoMinDate = null;
   let agendamentoMaxDate = null;
   let agendamentoSelectedDate = null;
@@ -288,25 +290,56 @@
     if(digits.length > 4) formatted = digits.slice(0,2) + '/' + digits.slice(2,4) + '/' + digits.slice(4);
     else if(digits.length > 2) formatted = digits.slice(0,2) + '/' + digits.slice(2);
     agendamentoDataInput.value = formatted;
-    if(digits.length < 8){ agendamentoConfirmBtn.disabled = true; return; }
+    if(digits.length < 8){
+      agendamentoConfirmBtn.disabled = true;
+      clearAgendamentoError();
+      return;
+    }
     validateAgendamentoDate();
   });
   agendamentoDataInput.addEventListener('blur', validateAgendamentoDate);
 
+  // Erro inline persistente (em vez de um toast que some sozinho e apagar o que o usuário digitou):
+  // o valor digitado permanece no campo para ele corrigir, e quando a data só está fora do
+  // intervalo permitido (não é um erro de formato) oferecemos um atalho de 1 clique para
+  // preencher com a data limite mais próxima, evitando que ele precise calcular/redigitar.
+  function showAgendamentoError(msg){
+    agendamentoDataInput.classList.add('is-invalid');
+    agendamentoDataErrorText.textContent = msg;
+    agendamentoDataError.hidden = false;
+  }
+  function clearAgendamentoError(){
+    agendamentoDataInput.classList.remove('is-invalid');
+    agendamentoDataError.hidden = true;
+  }
+
   function validateAgendamentoDate(){
     const value = agendamentoDataInput.value.trim();
-    if(!value){ agendamentoConfirmBtn.disabled = true; return; }
-    const parsed = parseBRDateString(value);
-    const foraDoIntervalo = !parsed || (agendamentoMinDate && parsed < agendamentoMinDate) || (agendamentoMaxDate && parsed > agendamentoMaxDate);
-    if(foraDoIntervalo){
-      showToast(parsed
-        ? 'Selecione uma data entre ' + toBRDate(agendamentoMinDate) + ' e ' + toBRDate(agendamentoMaxDate) + ' (até 5 dias úteis após a disponibilidade)'
-        : 'Data inválida. Use o formato DD/MM/AAAA.');
-      agendamentoDataInput.value = '';
-      agendamentoSelectedDate = null;
+    if(!value){
       agendamentoConfirmBtn.disabled = true;
+      clearAgendamentoError();
       return;
     }
+    const parsed = parseBRDateString(value);
+    if(!parsed){
+      agendamentoSelectedDate = null;
+      agendamentoConfirmBtn.disabled = true;
+      showAgendamentoError('Data inválida. Use o formato DD/MM/AAAA.');
+      return;
+    }
+    if(agendamentoMinDate && parsed < agendamentoMinDate){
+      agendamentoSelectedDate = null;
+      agendamentoConfirmBtn.disabled = true;
+      showAgendamentoError('Data inválida.');
+      return;
+    }
+    if(agendamentoMaxDate && parsed > agendamentoMaxDate){
+      agendamentoSelectedDate = null;
+      agendamentoConfirmBtn.disabled = true;
+      showAgendamentoError('Data inválida.');
+      return;
+    }
+    clearAgendamentoError();
     agendamentoSelectedDate = parsed;
     agendamentoConfirmBtn.disabled = false;
   }
@@ -330,6 +363,7 @@
     agendamentoSelectedDate = null;
     agendamentoOnConfirm = typeof onConfirm === 'function' ? onConfirm : null;
     agendamentoConfirmBtn.disabled = true;
+    clearAgendamentoError();
     agendamentoOverlay.classList.add('open');
   }
   function closeAgendamentoModal(){

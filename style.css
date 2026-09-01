@@ -786,6 +786,18 @@
   .agendamento-date-input::placeholder{color:#9da2a2;}
   .agendamento-date-input:focus-visible{outline:2px solid var(--blue-link);outline-offset:1px;}
   .agendamento-hint{font-size:14px;color:var(--blue-link);}
+  .agendamento-date-input.is-invalid{border-color:var(--red-700);}
+  .agendamento-date-input.is-invalid:focus-visible{outline-color:var(--red-700);}
+  .agendamento-error{
+    display:flex;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:6px 8px;
+    font-size:13px;
+    color:var(--red-700);
+  }
+  .agendamento-error[hidden]{display:none;}
+  .agendamento-error .ic{font-size:15px;flex:none;}
   .agendamento-textarea{
     background:#fff;
     border:1px solid var(--grey-300);
