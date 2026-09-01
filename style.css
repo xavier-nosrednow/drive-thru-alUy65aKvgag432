@@ -33,11 +33,12 @@
     --sp-3:12px;
     --sp-4:16px;
     --sp-6:24px;
-    /* Largura confortável de leitura para cabeçalho/abas/conteúdo em telas
-       muito grandes (desktop). O "aparelho" em si sempre preenche 100% da
-       tela — só o conteúdo interno fica centralizado e limitado nessas
-       larguras, como em qualquer app web responsivo. */
-    --content-max-width:1200px;
+    /* Largura de coluna estreita e centralizada para cabeçalho/abas/conteúdo
+       em telas grandes (desktop), no mesmo padrão usado em outras telas do
+       sistema PDV Go: o fundo (header vermelho e fundo cinza da página)
+       preenche 100% da tela, mas o conteúdo em si fica limitado a essa
+       largura e centralizado, com fundo cinza visível nas laterais. */
+    --content-max-width:598px;
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
