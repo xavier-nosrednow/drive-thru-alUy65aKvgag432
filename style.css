@@ -512,24 +512,20 @@
     display:inline-flex;
     align-items:center;
     gap:2px;
-    padding:4px 14px;
+    padding:4px 8px;
+    border:1px solid #22c094;
     border-radius:19px;
-    background:#2ac297;
-    color:#fff;
+    background:#fff;
+    color:#22c094;
     font-size:14px;
     font-style:italic;
     font-weight:500;
-    box-shadow:inset 0 0 4px rgba(0,0,0,0.1);
     white-space:nowrap;
   }
-  .badge-full .ic{font-size:16px;color:#fff;}
+  .badge-full .ic{font-size:16px;color:#22c094;}
 
   /* ---------- Dados para entrega ---------- */
   .entrega-body{padding:24px;display:flex;flex-direction:column;gap:8px;position:relative;}
-  .entrega-loading{display:none;align-items:center;justify-content:center;padding:48px 0;width:100%;}
-  .entrega-loading.active{display:flex;}
-  .entrega-spinner{width:28px;height:28px;border:3px solid var(--grey-100);border-top-color:var(--blue-link);border-radius:50%;animation:entrega-spin 0.7s linear infinite;}
-  @keyframes entrega-spin{ to{ transform:rotate(360deg); } }
   .entrega-opt{
     background:#fff;
     border:1px solid var(--grey-100);
@@ -549,9 +545,23 @@
   .entrega-opt:not(:disabled):hover{background:var(--grey-25);}
   .entrega-opt:disabled{opacity:0.5;cursor:not-allowed;}
 
+  /* Agrupamento "Opções de Entrega Padrão" / "Opções para Retirar no Depósito" */
+  .entrega-opt-group{display:flex;flex-direction:column;gap:16px;width:100%;}
+  .entrega-opt-group-title{margin:0;font-family:inherit;font-size:20px;font-weight:300;color:#3d3d3d;}
+  .entrega-opt-group-title strong{font-weight:600;}
+  .entrega-opt-group-list{display:flex;flex-direction:column;gap:8px;width:100%;}
+
+  /* Texto de apoio (subtítulo) exibido abaixo do título de uma opção de entrega */
+  .entrega-opt-sub{width:100%;padding:0 30px;font-size:14px;font-weight:300;color:var(--grey-500);text-align:left;}
+  .entrega-opt-sub em{font-style:italic;color:#3d3d3d;}
+
+  /* "Retira Depósito": mesmo botão .entrega-opt, mas em duas linhas (label + texto de apoio) */
+  .entrega-opt-deposito{flex-direction:column;align-items:flex-start;justify-content:center;gap:4px;padding:12px 16px;}
+  .entrega-opt-deposito-row{display:flex;align-items:center;gap:8px;width:100%;}
+
   .entrega-opt-rapido{
     background:#fff;
-    border:1px solid var(--grey-100);
+    border:1px solid #22C094;
     border-radius:8px;
     padding:16px;
     display:flex;
@@ -564,28 +574,13 @@
   }
   .entrega-opt-rapido:not(:disabled):hover{background:var(--grey-25);}
   .entrega-opt-rapido:disabled{opacity:0.5;cursor:not-allowed;}
-  .rapido-main{flex:1 0 0;display:flex;flex-direction:column;gap:4px;min-width:0;}
+  .rapido-main{flex:1 0 0;display:flex;flex-direction:column;gap:8px;min-width:0;}
   .rapido-title-row{display:flex;align-items:center;gap:8px;width:100%;}
   .rapido-title-row .ic{font-size:16px;color:var(--grey-950);flex:none;}
   .rapido-title{flex:1 0 0;font-size:16px;font-weight:500;color:var(--grey-950);}
-  .rapido-subtitle{font-size:12px;color:var(--blue-link);}
-  .rapido-badge-full{
-    position:relative;
-    flex:none;
-    display:flex;
-    align-items:center;
-    gap:2px;
-    padding:4px 14px;
-    border-radius:19px;
-    background:#2ac297;
-    color:#fff;
-    font-size:14px;
-    font-style:italic;
-    font-weight:500;
-    box-shadow:inset 0 0 4px rgba(0,0,0,0.1);
-    white-space:nowrap;
-  }
-  .rapido-badge-full .ic{font-size:16px;color:#fff;}
+  .rapido-date{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:2px;font-size:14px;text-align:right;white-space:nowrap;}
+  .rapido-date-label{color:var(--grey-500);}
+  .rapido-date-value{color:var(--blue-link);font-weight:600;}
 
   /* ---------- Retira Rápido — estado expandido ---------- */
   .entrega-detail-view{display:flex;flex-direction:column;gap:24px;width:100%;}
@@ -845,6 +840,9 @@
   @media (max-width:400px){
     .agendamento-modal-body{padding:0 16px;}
     .agendamento-modal-actions{padding:0 16px;}
+    .entrega-opt-rapido{flex-direction:column;align-items:flex-start;}
+    .rapido-date{align-items:flex-start;text-align:left;flex-direction:row;gap:4px;padding-left:26px;}
+    .entrega-opt-sub{padding:0;}
   }
 
   /* ---------- Drawer / menu ---------- */

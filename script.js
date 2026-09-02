@@ -125,7 +125,7 @@
   updateGravarAvailability();
 
   const entregaDetailConfig = {
-    rapido: { icon: '#i-zap', label: 'Retira Rápido' },
+    rapido: { icon: '#i-zap-fill', label: 'Retira Rápido Depósito' },
     deposito: { icon: '#i-warehouse', label: 'Retira Depósito' }
   };
 
@@ -174,23 +174,12 @@
     entregaDetailView.style.display = 'flex';
   }
 
-  // ---- Loading de 0,5s ao trocar de estado no card "Dados Para Entrega" ----
-  // Usado ao: escolher um tipo de entrega, voltar para trocar o método, ou alterar o local de retirada.
-  const entregaLoading = document.getElementById('entregaLoading');
-  let entregaLoadingActive = false;
+  // ---- Aplica a troca de estado no card "Dados Para Entrega" imediatamente,
+  // sem animação de carregamento. Usado ao: escolher um tipo de entrega,
+  // voltar para trocar o método, ou alterar o local de retirada.
   function withEntregaLoading(applyState){
-    if(entregaLoadingActive) return;
-    entregaLoadingActive = true;
-    entregaOptionsView.style.display = 'none';
-    entregaDetailView.style.display = 'none';
-    entregaLoading.classList.add('active');
+    applyState();
     updateGravarAvailability();
-    setTimeout(()=>{
-      entregaLoading.classList.remove('active');
-      applyState();
-      updateGravarAvailability();
-      entregaLoadingActive = false;
-    }, 500);
   }
 
   entregaRapidoBtn.addEventListener('click', ()=>{
