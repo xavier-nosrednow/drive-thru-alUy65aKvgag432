@@ -399,6 +399,17 @@
     }
     // Todos os itens já tiveram a entrega tratada: o card "Dados Para Entrega" não tem mais função aqui.
     dadosEntregaCard.style.display = remaining === 0 ? 'none' : '';
+
+    // Idem para o botão "Gravar": vira um atalho para a próxima etapa ("Ir para Serviços").
+    if(remaining === 0){
+      btnGravar.textContent = 'Ir para Serviços';
+      btnGravar.title = '';
+      btnGravar.disabled = false;
+    } else {
+      btnGravar.textContent = 'Gravar';
+      btnGravar.title = 'Selecione o(s) produto(s) e o método de entrega para habilitar';
+      updateGravarAvailability();
+    }
   }
   // ---- Lista de Entregas de Pedidos: um item novo a cada entrega gerada ----
   // Card de detalhe (aberto/fechado) conforme node 6506:121939.
@@ -439,7 +450,6 @@
       '</button>' +
       '<div class="entrega-resumo-detail">' +
         '<div class="entrega-info-box">' +
-          '<p>Prazo Extra de Entrega: <strong>1 dias</strong></p>' +
           '<p>Disponível para retirada a partir de <strong class="entrega-disponibilidade-valor">' + dataRetirada + '</strong> às <span class="entrega-disponibilidade-hora">' + horaRetirada + '</span>.</p>' +
           '<p><strong>Não será montado.</strong></p>' +
         '</div>' +
@@ -488,6 +498,14 @@
   btnGravar.addEventListener('click', ()=>{
     if(btnGravar.disabled) return;
 
+    // Depois que todos os produtos já tiveram a entrega tratada, o botão vira
+    // um atalho para a próxima etapa em vez de gravar uma nova entrega.
+    if(produtoListaBody.querySelectorAll('.produto-item').length === 0){
+      const servicosTab = document.querySelector('.tab[data-tab="servicos"]');
+      if(servicosTab) servicosTab.click();
+      return;
+    }
+
     const itemsToRemove = Array.from(document.querySelectorAll('.produto-item')).filter(item=>{
       const cb = item.querySelector('[data-product-checkbox]');
       return cb && cb.classList.contains('checked');
@@ -524,7 +542,7 @@
     entregaOptionsView.style.display = 'flex';
 
     updateEntregaAvailability();
-    updateGravarAvailability();
+    updateProdutoListaEmptyState();
     showEntregaSuccessToast();
   });
 
