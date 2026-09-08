@@ -21,7 +21,8 @@
   const overlay = document.getElementById('overlay');
   function openDrawer(){ drawer.classList.add('open'); overlay.classList.add('open'); }
   function closeDrawer(){ drawer.classList.remove('open'); overlay.classList.remove('open'); }
-  document.getElementById('menuToggleBtn').addEventListener('click', openDrawer);
+  // Temporariamente desabilitado: o botão de menu não deve abrir o drawer lateral por enquanto.
+  // document.getElementById('menuToggleBtn').addEventListener('click', openDrawer);
   document.getElementById('drawerCloseBtn').addEventListener('click', closeDrawer);
   overlay.addEventListener('click', closeDrawer);
 
