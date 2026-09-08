@@ -101,6 +101,17 @@
     });
     entregaOtherButtons.forEach(btn=> btn.disabled = !anySelected);
     entregaRapidoBtn.disabled = !anySelected || !allSelectedFull;
+
+    // Selo "Retira Rápido" do produto: some quando o produto está selecionado junto com
+    // outro(s) produto(s) sem o selo (seleção mista quebra a elegibilidade do grupo).
+    // Reaparece se o produto for desmarcado ou se a seleção voltar a ser só de produtos com selo.
+    document.querySelectorAll('.produto-item[data-full="true"]').forEach(item=>{
+      const cb = item.querySelector('[data-product-checkbox]');
+      const badge = item.querySelector('.badge-full');
+      if(!badge) return;
+      const isSelected = cb && cb.classList.contains('checked');
+      badge.style.display = (isSelected && !allSelectedFull) ? 'none' : '';
+    });
   }
   updateEntregaAvailability();
 
